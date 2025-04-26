@@ -42,8 +42,7 @@ class Player:
         self.collecting_bases = 0
 
         self.active_flows = []
-        self.active_collecting_wells = set()
-
+        self.active_collecting_bases = set()
 
     def update_movement(self, keys):
         dx = dy = 0
@@ -114,7 +113,7 @@ class Player:
     def try_spawn_base(self):
         if self.points >= BASE_COST and time.time() - self.last_base_spawn_time >= self.base_spawn_cooldown and self.distance_from_base < self.maximum_capable_distance:
             prev_base = self.bases[-1] if self.bases else None
-            new_base = Base(self.center_x, self.center_y, previous_base=prev_base)
+            new_base = Base(self.center_x, self.center_y, previous_base=prev_base, main_base=self.bases[0])
             self.bases.append(new_base)
             self.last_base_spawn_time = time.time()
             self.points -= BASE_COST
@@ -132,7 +131,15 @@ class Player:
 
         for base in self.bases:
             base.update(enemies, bullets, wells)
-                            
+            if base.is_collecting:
+                self.active_collecting_bases.add(base)
+
+        print(len(self.active_collecting_bases))
+
+        # total_collected = sum(base.collected for base in self.bases if base.assigned_well)       
+        # self.bases[0].collected = total_collected
+        # print(self.bases[0].collected)
+
     def draw(self, enemies):
         # Line from base to player
         # Build a path from (0, 0) -> bases -> player

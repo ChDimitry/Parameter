@@ -6,7 +6,8 @@ import time
 from common import get_distance
 
 class Base:
-    def __init__(self, x, y, previous_base=None):
+    def __init__(self, x, y, previous_base=None, main_base=None):
+        self.main_base = main_base
         self.center_x = x
         self.center_y = y
         self.color = arcade.color.GRAY
@@ -26,7 +27,6 @@ class Base:
         self.collected = 0
         self.previous_base = previous_base
         self.assigned_well = None
-
 
     def update(self, enemies, bullets, wells):
         self.distance_from_base = math.hypot(self.center_x, self.center_y)
@@ -54,7 +54,12 @@ class Base:
                 if time.time() - well.last_transfer >= 1:
                     well.capacity -= 1
                     self.collected += 1
+                    self.main_base.collected += 1
                     well.last_transfer = time.time()
+
+            if well.capacity <= 0:
+                well.active = False
+
 
     def update_rotation(self, enemies):
         # Automatically rotate to face the nearest enemy if possible
@@ -117,6 +122,17 @@ class Base:
             anchor_x="center",
             anchor_y="center"
         )
+        
+        # Draw collected resources text
+        if not self.main_base:
+            arcade.draw_text(
+                f"Collected: {self.collected}",
+                self.center_x, self.center_y - 22,
+                arcade.color.WHITE,
+                font_size=12,
+                anchor_x="center",
+                anchor_y="center"
+            )
 
         arcade.draw_circle_filled(
             self.center_x,

@@ -2,7 +2,7 @@ import arcade
 import random
 
 class ResourceWell:
-    def __init__(self, x=None, y=None, capacity=100, radius=50):
+    def __init__(self, x=None, y=None, capacity=5, radius=50):
         self.center_x = x if x is not None else random.randint(-1000, 1000)
         self.center_y = y if y is not None else random.randint(-1000, 1000)
         self.capacity = capacity
