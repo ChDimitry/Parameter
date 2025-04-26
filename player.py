@@ -12,10 +12,10 @@ class Player:
         self.center_y = y
         self.radius = 5  # no longer used
         self.color = arcade.color.BLUE_YONDER
-        self.weapon = Weapon(owner=self)
+        self.weapon = Weapon(owner=self, damage=5, range=100, bullet_speed=20, fire_rate=0.3)
         self.distance_from_base = 0
         self.points = 0
-        self.maximum_capable_distance = 2
+        self.maximum_capable_distance = 3
         self.distance_left = 0
 
         self.player_speed = 0
@@ -36,9 +36,13 @@ class Player:
 
 
 
-        self.bases = []
+        self.bases = [Base(0, 0, previous_base=None)]
         self.last_base_spawn_time = 0
         self.base_spawn_cooldown = 0.5
+        self.collecting_bases = 0
+
+        self.active_flows = []
+        self.active_collecting_wells = set()
 
 
     def update_movement(self, keys):
@@ -108,8 +112,9 @@ class Player:
             self.rotation %= 360
 
     def try_spawn_base(self):
-        if self.points >= BASE_COST and time.time() - self.last_base_spawn_time >= self.base_spawn_cooldown:
-            new_base = Base(self.center_x, self.center_y)
+        if self.points >= BASE_COST and time.time() - self.last_base_spawn_time >= self.base_spawn_cooldown and self.distance_from_base < self.maximum_capable_distance:
+            prev_base = self.bases[-1] if self.bases else None
+            new_base = Base(self.center_x, self.center_y, previous_base=prev_base)
             self.bases.append(new_base)
             self.last_base_spawn_time = time.time()
             self.points -= BASE_COST
@@ -118,16 +123,16 @@ class Player:
         if keys.get(arcade.key.SPACE, False):
             self.try_spawn_base()
 
-    def update(self, enemies, bullets, keys):
-        self.distance_from_base = get_distance(self.center_x, self.bases[-1].center_x, self.center_y, self.bases[-1].center_y) if self.bases else math.hypot(self.center_x, self.center_y)
+    def update(self, enemies, bullets, keys, wells):
+        self.distance_from_base = (get_distance(self.center_x, self.bases[-1].center_x, self.center_y, self.bases[-1].center_y) / KILOMETER) if self.bases else (math.hypot(self.center_x, self.center_y) / KILOMETER)
         self.update_movement(keys)
         self.handle_input(keys)
         self.weapon.update(enemies)
         self.weapon.try_fire(enemies, bullets)
 
         for base in self.bases:
-            base.update(enemies, bullets)
-
+            base.update(enemies, bullets, wells)
+                            
     def draw(self, enemies):
         # Line from base to player
         # Build a path from (0, 0) -> bases -> player
@@ -142,19 +147,34 @@ class Player:
 
         # Draw lines connecting all points
         arcade.draw_line_strip(
-            points,
-            arcade.color.GRAY,
-            1  # Line width
+            points[:-1],
+            (100, 255, 100, 50),  # Color
+            3  # Line width
         )
-        # Draw line from player to base
-        if self.bases:
+        # Draw the last line from the last base to the player
+        if self.distance_from_base <= self.maximum_capable_distance:
             arcade.draw_line(
-                0, 0,
-                self.bases[0].center_x, self.bases[0].center_y,
-                arcade.color.GRAY,
+                points[-2][0], points[-2][1],
+                points[-1][0], points[-1][1],
+                (100, 255, 100, 50),
+                1  # Line width
+            )
+        # # Draw line from player to base
+        # if self.bases:
+        #     arcade.draw_line(
+        #         0, 0,
+        #         self.bases[0].center_x, self.bases[0].center_y,
+        #         arcade.color.GRAY if self.distance_from_base < self.maximum_capable_distance else arcade.color.RED,
+        #         1
+        #     )
+
+        if self.distance_from_base > self.maximum_capable_distance:
+            arcade.draw_line(
+                self.center_x, self.center_y,
+                self.bases[-1].center_x, self.bases[-1].center_y,
+                (0, 0, 0, 50),
                 1
             )
-
 
         # # Create rect with proper values
         rect = arcade.Rect(
@@ -171,6 +191,26 @@ class Player:
             self.color,
             tilt_angle=self.rotation
         )
+
+        # Draw level text
+        arcade.draw_text(
+            f"{int(self.distance_from_base)} KM",
+            self.center_x, self.center_y + 22,
+            arcade.color.WHITE,
+            font_size=10,
+            anchor_x="center",
+            anchor_y="center"
+        )
+
+        # Number of collecting bases
+        # arcade.draw_text(
+        #     f"{self.collecting_bases}",
+        #     self.center_x, self.center_y - 22,
+        #     arcade.color.WHITE,
+        #     font_size=10,
+        #     anchor_x="center",
+        #     anchor_y="center"
+        # )
 
         end_x = self.center_x + math.cos(math.radians(self.rotation)) * 20
         end_y = self.center_y + math.sin(math.radians(self.rotation)) * 20

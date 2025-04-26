@@ -3,6 +3,7 @@ import random
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, KILOMETER
 from player import Player
 from enemy import Enemy
+from resource_well import ResourceWell
 import math
 import arcade.camera
 from common import get_distance
@@ -14,7 +15,10 @@ class GameWindow(arcade.Window):
         self.player = None
         self.enemies = []
         self.bullets = []
+        self.wells = []
         self._keys = {}
+
+
 
         self.time_passed = 0
 
@@ -23,43 +27,27 @@ class GameWindow(arcade.Window):
 
     def setup(self):
         self.player = Player(0, 0)
+        # Spawn 10 random wells
+        for _ in range(10):
+            well = ResourceWell()
+            self.wells.append(well)
 
     def on_draw(self):
         self.clear()
         # Draw world
         self.camera.use()
 
+        # Draw wells
+        for well in self.wells:
+            well.draw()
+
         self.player.draw(self.enemies)
         
         for enemy in self.enemies:
             enemy.draw()
 
-        arcade.draw_circle_outline(
-            self.player.center_x,
-            self.player.center_y,
-            200,
-            arcade.color.BLUE_SAPPHIRE,
-            1
-        )
-
-        arcade.draw_circle_outline(
-            0,
-            0,
-            50,
-            arcade.color.BLUE_SAPPHIRE,
-            1
-        )
-
         # Draw UI
         self.gui_camera.use()
-        distance_px = self.player.distance_from_base
-        distance_km = int(distance_px / KILOMETER)
-        arcade.draw_text(
-            f"{distance_km} KM",
-            10, SCREEN_HEIGHT - 30,
-            arcade.color.WHITE,
-            20
-        )
 
         # draw players position
         arcade.draw_text(
@@ -77,14 +65,13 @@ class GameWindow(arcade.Window):
             20
         )
         
-        
-
     def on_update(self, delta_time):
-        self.player.update(self.enemies, self.bullets, self._keys)
+        self.player.update(self.enemies, self.bullets, self._keys, self.wells)
 
         for enemy in self.enemies:
             enemy.update(self.player)
 
+        # self.bases[0].weapon.level_up(damage=1, range=10, bullet_speed=1, fire_rate=0.05)
 
         self.spawn_enemies()
         self.camera.position = (self.player.center_x, self.player.center_y)

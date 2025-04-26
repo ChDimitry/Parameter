@@ -4,7 +4,7 @@ import time
 from common import get_distance
 
 class Weapon:
-    def __init__(self, owner, damage=5, range=200, bullet_speed=10, fire_rate=0.3):
+    def __init__(self, owner, damage=5, range=100, bullet_speed=20, fire_rate=1):
         self.owner = owner
         self.damage = damage
         self.range = range
@@ -13,7 +13,6 @@ class Weapon:
         self.last_shot_time = 0
 
         self.angle = 0
-
 
         self.bullets = []
 
@@ -44,6 +43,12 @@ class Weapon:
                 self.last_shot_time = time.time()
                 break
 
+    def level_up(self, damage, range, bullet_speed, fire_rate):
+        self.damage += damage
+        self.range += range
+        self.bullet_speed += bullet_speed
+        self.fire_rate -= fire_rate
+        
     def update(self, enemies):
         # BULLETS UPDATE
         for bullet in self.bullets:
