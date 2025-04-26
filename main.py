@@ -29,14 +29,10 @@ class GameWindow(arcade.Window):
         # Draw world
         self.camera.use()
 
-        self.player.draw()
+        self.player.draw(self.enemies)
         
         for enemy in self.enemies:
             enemy.draw()
-
-        # BULLETS DRAW
-        for bullet in self.bullets:
-            arcade.draw_circle_filled(bullet["x"], bullet["y"], bullet["radius"], bullet["color"])
 
         arcade.draw_circle_outline(
             self.player.center_x,
@@ -87,25 +83,8 @@ class GameWindow(arcade.Window):
         self.player.update(self.enemies, self.bullets, self._keys)
 
         for enemy in self.enemies:
-            enemy.update_towards_player(self.player)
+            enemy.update(self.player)
 
-        # BULLETS UPDATE
-        for bullet in self.bullets:
-            bullet["x"] += bullet["dx"]
-            bullet["y"] += bullet["dy"]
-
-        for bullet in self.bullets[:]:
-            for enemy in self.enemies[:]:
-                dist = get_distance(bullet["x"], enemy.center_x, bullet["y"], enemy.center_y)
-                if dist < bullet["radius"] + enemy.radius:
-                    # Check if the bullet hits the enemy
-                    enemy.health -= bullet["damage"]
-                    if enemy.health <= 0:
-                        self.enemies.remove(enemy)
-                        self.player.points += 1
-                    if bullet in self.bullets:
-                        self.bullets.remove(bullet)
-                    break
 
         self.spawn_enemies()
         self.camera.position = (self.player.center_x, self.player.center_y)

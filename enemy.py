@@ -18,5 +18,8 @@ class Enemy:
         self.center_x += self.speed * dx / dist
         self.center_y += self.speed * dy / dist
 
+    def update(self, player):
+        self.update_towards_player(player)
+
     def draw(self):
         arcade.draw_circle_filled(self.center_x, self.center_y, self.radius, self.color)
