@@ -42,10 +42,10 @@ class UIPanel:
         )
 
         # Gather player info
-        base_count = len(self.player.bases)
-        collecting_count = len(self.player.active_collecting_bases)
+        base_count = len(self.player.nodes)
+        collecting_count = len(self.player.active_collecting_nodes)
         scrap = self.player.scrap
-        collected_resources = self.player.bases[0].collected 
+        collected_resources = self.player.main_base.collected_resources 
         distance = int(self.player.distance_from_base)
 
         ui_elements = [base_count, collecting_count, scrap, collected_resources, distance]
@@ -54,6 +54,6 @@ class UIPanel:
         arcade.draw_text(f"Bases: {base_count}", self.center_x - self.x_shift, self.center_y + self.y_shift, self.text_color, self.font_size, font_name=self.font_name)
         arcade.draw_text(f"Collecting: {collecting_count}", self.center_x - 90, self.center_y + self.y_shift - 20, self.text_color, self.font_size, font_name=self.font_name)
         arcade.draw_text(f"Scrap: {scrap}", self.center_x - self.x_shift, self.center_y + self.y_shift - 40, self.text_color, self.font_size, font_name=self.font_name)
-        arcade.draw_text(f"Distance: {distance}", self.center_x - self.x_shift, self.center_y + self.y_shift - 60, self.text_color, self.font_size, font_name=self.font_name)
-        arcade.draw_text(f"Collected: {collected_resources}", self.center_x - self.x_shift, self.center_y + self.y_shift - 80, self.text_color, self.font_size, font_name=self.font_name)
+        arcade.draw_text(f"Distance: {distance} KM", self.center_x - self.x_shift, self.center_y + self.y_shift - 60, self.text_color, self.font_size, font_name=self.font_name)
+        arcade.draw_text(f"Resources: {collected_resources}", self.center_x - self.x_shift, self.center_y + self.y_shift - 80, self.text_color, self.font_size, font_name=self.font_name)
         arcade.draw_text(f"Base Cost: {BASE_COST} Scrap", self.center_x - self.x_shift, self.center_y + self.y_shift - 100, self.text_color, self.font_size, font_name=self.font_name)

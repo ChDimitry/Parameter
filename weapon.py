@@ -45,7 +45,7 @@ class Weapon:
                 enemy.center_x - self.owner.center_x,
                 enemy.center_y - self.owner.center_y
             )
-            if dist < self.range:
+            if dist < self.range and not enemy.is_dying:
                 self.angle = math.atan2(
                     enemy.center_y - self.owner.center_y,
                     enemy.center_x - self.owner.center_x
@@ -54,19 +54,19 @@ class Weapon:
                 # Apply angle offset for visual arc
                 angle_offset = math.radians(random.uniform(-40, 40))
                 firing_angle = self.angle + angle_offset
-                if not enemy.is_dying:
-                    self.bullets.append(
-                        Bullet(
-                            x=self.owner.center_x,
-                            y=self.owner.center_y,
-                            dx=math.cos(firing_angle) * self.bullet_speed,
-                            dy=math.sin(firing_angle) * self.bullet_speed,
-                            radius=3,
-                            damage=self.damage,
-                            color=arcade.color.WHITE_SMOKE,
-                            target=enemy
-                        )
+                # if not enemy.is_dying:
+                self.bullets.append(
+                    Bullet(
+                        x=self.owner.center_x,
+                        y=self.owner.center_y,
+                        dx=math.cos(firing_angle) * self.bullet_speed,
+                        dy=math.sin(firing_angle) * self.bullet_speed,
+                        radius=3,
+                        damage=self.damage,
+                        color=arcade.color.WHITE_SMOKE,
+                        target=enemy
                     )
+                )
                 self.last_shot_time = time.time()
                 break
 
@@ -76,7 +76,7 @@ class Weapon:
         self.bullet_speed += bullet_speed
         self.fire_rate = max(0.05, self.fire_rate - fire_rate)
 
-    def update(self, enemies):
+    def update(self, enemies, player):
         for bullet in self.bullets:
             if bullet.target and bullet.lifespan > 0:
                 # Homing toward target
@@ -94,7 +94,7 @@ class Weapon:
 
             # Save current position to trail
             bullet.trail.append((bullet.x, bullet.y, int(255 * bullet.lifespan / 2.0)))
-            if len(bullet.trail) > 5:
+            if len(bullet.trail) > 10:
                 bullet.trail.pop(0)
 
             bullet.x += bullet.dx
@@ -112,7 +112,7 @@ class Weapon:
                     enemy.health -= bullet.damage
                     enemy.add_hit_particles(math.atan2(bullet.dy, bullet.dx))
                     if enemy.health <= 0:
-                        self.owner.scrap += 1
+                        player.scrap += 1
                     if bullet in self.bullets:
                         self.bullets.remove(bullet)
                     break

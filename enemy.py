@@ -18,20 +18,20 @@ class Enemy:
         self.death_timer = 30
         self.dead = False
 
-    def update_towards_player(self, player):
-        dx = player.center_x - self.center_x
-        dy = player.center_y - self.center_y
-        dist = max(1, get_distance(player.center_x, self.center_x, player.center_y , self.center_y))
+    def update_towards_base(self, main_base):
+        dx = main_base.center_x - self.center_x
+        dy = main_base.center_y - self.center_y
+        dist = max(1, get_distance(main_base.center_x, self.center_x, main_base.center_y, self.center_y))
         self.center_x += self.speed * dx / dist
         self.center_y += self.speed * dy / dist
 
-    def update(self, player):
+    def update(self, main_base):
         if self.is_dying:
             self.death_timer -= 1
             if self.death_timer <= 0:
                 self.dead = True
         else:
-            self.update_towards_player(player)
+            self.update_towards_base(main_base=main_base)
 
         # Update hit particles
         for i, (x, y, dx, dy, life) in enumerate(self.hit_particles):
