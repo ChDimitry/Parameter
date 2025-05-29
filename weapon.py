@@ -2,18 +2,35 @@ import arcade
 import math
 import time
 from common import get_distance
+from dataclasses import dataclass
+from typing import Tuple, Optional
+import random
+
+@dataclass
+class Bullet:
+    x: float
+    y: float
+    dx: float
+    dy: float
+    radius: float
+    damage: int
+    color: Tuple[int, int, int, int]
+    lifespan: float = 2.0
+    target: Optional[object] = None
+    trail: list = None  # list of (x, y, alpha)
+
+    def __post_init__(self):
+        self.trail = []
 
 class Weapon:
-    def __init__(self, owner, damage=5, range=100, bullet_speed=20, fire_rate=1):
+    def __init__(self, owner, damage=5, range=100, bullet_speed=5, fire_rate=1):
         self.owner = owner
         self.damage = damage
         self.range = range
         self.bullet_speed = bullet_speed
         self.fire_rate = fire_rate
         self.last_shot_time = 0
-
         self.angle = 0
-
         self.bullets = []
 
     def can_fire(self):
@@ -29,17 +46,27 @@ class Weapon:
                 enemy.center_y - self.owner.center_y
             )
             if dist < self.range:
-                self.angle = math.atan2(enemy.center_y - self.owner.center_y,
-                                   enemy.center_x - self.owner.center_x)
-                self.bullets.append({
-                    "x": self.owner.center_x,
-                    "y": self.owner.center_y,
-                    "dx": math.cos(self.angle) * self.bullet_speed,
-                    "dy": math.sin(self.angle) * self.bullet_speed,
-                    "radius": 3,
-                    "damage": self.damage,
-                    "color": arcade.color.YELLOW,
-                })
+                self.angle = math.atan2(
+                    enemy.center_y - self.owner.center_y,
+                    enemy.center_x - self.owner.center_x
+                )
+
+                # Apply angle offset for visual arc
+                angle_offset = math.radians(random.uniform(-40, 40))
+                firing_angle = self.angle + angle_offset
+                if not enemy.is_dying:
+                    self.bullets.append(
+                        Bullet(
+                            x=self.owner.center_x,
+                            y=self.owner.center_y,
+                            dx=math.cos(firing_angle) * self.bullet_speed,
+                            dy=math.sin(firing_angle) * self.bullet_speed,
+                            radius=3,
+                            damage=self.damage,
+                            color=arcade.color.WHITE_SMOKE,
+                            target=enemy
+                        )
+                    )
                 self.last_shot_time = time.time()
                 break
 
@@ -47,41 +74,56 @@ class Weapon:
         self.damage += damage
         self.range += range
         self.bullet_speed += bullet_speed
-        self.fire_rate -= fire_rate
-        
+        self.fire_rate = max(0.05, self.fire_rate - fire_rate)
+
     def update(self, enemies):
-        # BULLETS UPDATE
         for bullet in self.bullets:
-            bullet["x"] += bullet["dx"]
-            bullet["y"] += bullet["dy"]
+            if bullet.target and bullet.lifespan > 0:
+                # Homing toward target
+                to_target_x = bullet.target.center_x - bullet.x
+                to_target_y = bullet.target.center_y - bullet.y
+                distance = math.hypot(to_target_x, to_target_y)
+
+                if distance > 1:
+                    to_target_x /= distance
+                    to_target_y /= distance
+
+                    steer_strength = 0.2  # lower = wider arc
+                    bullet.dx = (1 - steer_strength) * bullet.dx + steer_strength * to_target_x * self.bullet_speed
+                    bullet.dy = (1 - steer_strength) * bullet.dy + steer_strength * to_target_y * self.bullet_speed
+
+            # Save current position to trail
+            bullet.trail.append((bullet.x, bullet.y, int(255 * bullet.lifespan / 2.0)))
+            if len(bullet.trail) > 5:
+                bullet.trail.pop(0)
+
+            bullet.x += bullet.dx
+            bullet.y += bullet.dy
+            bullet.lifespan -= 1 / 60
 
         for bullet in self.bullets[:]:
+            if bullet.lifespan <= 0:
+                self.bullets.remove(bullet)
+                continue
+
             for enemy in enemies[:]:
-                dist = get_distance(bullet["x"], enemy.center_x, bullet["y"], enemy.center_y)
-                if dist < bullet["radius"] + enemy.radius:
-                    # Check if the bullet hits the enemy
-                    enemy.health -= bullet["damage"]
+                dist = get_distance(bullet.x, enemy.center_x, bullet.y, enemy.center_y)
+                if dist < bullet.radius + enemy.radius:
+                    enemy.health -= bullet.damage
+                    enemy.add_hit_particles(math.atan2(bullet.dy, bullet.dx))
                     if enemy.health <= 0:
-                        enemies.remove(enemy)
-                        self.owner.points += 1
+                        self.owner.scrap += 1
                     if bullet in self.bullets:
                         self.bullets.remove(bullet)
                     break
 
-
-    def draw(self, enemies):
-        end_x = self.owner.center_x + math.cos(self.angle) * 20
-        end_y = self.owner.center_y + math.sin(self.angle) * 20
-
-        arcade.draw_line(
-            self.owner.center_x,
-            self.owner.center_y,
-            end_x,
-            end_y,
-            arcade.color.YELLOW,
-            1
-        )
-
-                # BULLETS DRAW
+    def draw(self):
         for bullet in self.bullets:
-            arcade.draw_circle_filled(bullet["x"], bullet["y"], bullet["radius"], bullet["color"])
+            # Draw trail
+            for tx, ty, alpha in bullet.trail:
+                size = 2
+                color = arcade.color.GRAY[:3] + (max(30, alpha),)
+                arcade.draw_circle_filled(tx, ty, size, color)
+
+            # Draw main bullet
+            arcade.draw_circle_filled(bullet.x, bullet.y, bullet.radius, bullet.color)

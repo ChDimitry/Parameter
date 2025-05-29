@@ -1,12 +1,12 @@
 import arcade
 import random
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, KILOMETER
+from config import SCREEN_WIDTH, SCREEN_HEIGHT
 from player import Player
 from enemy import Enemy
 from resource_well import ResourceWell
-import math
 import arcade.camera
-from common import get_distance
+
+from uiPanel import UIPanel
 
 class GameWindow(arcade.Window):
     def __init__(self):
@@ -18,19 +18,21 @@ class GameWindow(arcade.Window):
         self.wells = []
         self._keys = {}
 
-
-
         self.time_passed = 0
 
         self.camera = arcade.camera.Camera2D()
         self.gui_camera = arcade.camera.Camera2D()
 
+        self.ui_panel = None
+
     def setup(self):
         self.player = Player(0, 0)
         # Spawn 10 random wells
         for _ in range(10):
-            well = ResourceWell()
+            well = ResourceWell(x_max=1000, y_max=1000, capacity=100, radius=75)
             self.wells.append(well)
+
+        self.ui_panel = UIPanel(self.player)
 
     def on_draw(self):
         self.clear()
@@ -46,27 +48,16 @@ class GameWindow(arcade.Window):
         for enemy in self.enemies:
             enemy.draw()
 
-        # Draw UI
         self.gui_camera.use()
 
-        # draw players position
-        arcade.draw_text(
-            f"({int(self.player.center_x)}, {int(self.player.center_y)})",
-            10, SCREEN_HEIGHT - 60,
-            arcade.color.WHITE,
-            20
-        )
+        # Draw GUI
+        self.ui_panel.draw()
 
-        # draw player points
-        arcade.draw_text(
-            f"{self.player.points}",
-            10, SCREEN_HEIGHT - 90,
-            arcade.color.WHITE,
-            20
-        )
-        
+
+
     def on_update(self, delta_time):
         self.player.update(self.enemies, self.bullets, self._keys, self.wells)
+        self.enemies = [e for e in self.enemies if not e.dead]
 
         for enemy in self.enemies:
             enemy.update(self.player)
@@ -75,7 +66,7 @@ class GameWindow(arcade.Window):
 
         self.spawn_enemies()
         self.camera.position = (self.player.center_x, self.player.center_y)
-        self.time_passed += 0.0001
+        # self.time_passed += 0.0001
 
     def spawn_enemies(self):
         if len(self.enemies) < 20:
@@ -99,7 +90,6 @@ class GameWindow(arcade.Window):
                 y = random.randint(int(py - margin), int(py + margin))
 
             self.enemies.append(Enemy(x, y, speed=1, health=10, damage=5))
-
 
     def on_key_press(self, symbol, modifiers):
         self._keys[symbol] = True
