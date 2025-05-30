@@ -26,16 +26,11 @@ class Node:
         self.previous_base = previous_base
         self.assigned_well = None
 
-    def update(self, enemies, bullets, wells):
+    def update(self, enemies, wells):
         self.distance_from_base = math.hypot(self.center_x, self.center_y)
         # self.update_rotation(enemies)
         self.weapon.update(enemies, player=self.player)
-        self.weapon.try_fire(enemies, bullets)
-
-        # if self.scrap >= 10:
-        #     self.level += 1
-        #     self.scrap = 0
-        #     self.weapon.level_up(damage=1, range=10, bullet_speed=1, fire_rate=0.05)
+        self.weapon.try_fire(enemies)
 
         if self.is_collecting and self.previous_base:
             self.previous_base.is_collecting = True
@@ -56,36 +51,6 @@ class Node:
             if well.capacity <= 0:
                 well.active = False
 
-    # def update_rotation(self, enemies):
-    #     # Automatically rotate to face the nearest enemy if possible
-    #     if not enemies:
-    #         return
-
-    #     closest_enemy = None
-    #     closest_dist = float('inf')
-
-    #     for enemy in enemies:
-    #         dist = math.hypot(
-    #             enemy.center_x - self.center_x,
-    #             enemy.center_y - self.center_y
-    #         )
-    #         if dist < closest_dist:
-    #             closest_enemy = enemy
-    #             closest_dist = dist
-
-    #     if closest_enemy:
-    #         dx = closest_enemy.center_x - self.center_x
-    #         dy = closest_enemy.center_y - self.center_y
-    #         target_angle_rad = math.atan2(dy, dx)
-    #         target_angle_deg = math.degrees(target_angle_rad)
-
-    #         angle_diff = (target_angle_deg - self.rotation + 180) % 360 - 180
-    #         if abs(angle_diff) < self.rotation_speed:
-    #             self.rotation = target_angle_deg
-    #         else:
-    #             self.rotation += self.rotation_speed * (1 if angle_diff > 0 else -1)
-    #         self.rotation %= 360
-
     def draw(self):
         # Draw cicle for the node
         arcade.draw_circle_filled(
@@ -93,31 +58,6 @@ class Node:
             self.width / 2, 
             self.color
         )
-
-        # # Draw barrel line for visual aiming
-        # end_x = self.center_x + math.cos(math.radians(self.rotation)) * 20
-        # end_y = self.center_y + math.sin(math.radians(self.rotation)) * 20
-
-        # arcade.draw_line(self.center_x, self.center_y, end_x, end_y, arcade.color.RED, 1)
-
-        # Draw level text
-        # arcade.draw_text(
-        #     f"Level: {self.level}",
-        #     self.center_x, self.center_y + 22,
-        #     arcade.color.WHITE,
-        #     font_size=12,
-        #     anchor_x="center",
-        #     anchor_y="center"
-        # )
-
-        # Base range
-        # arcade.draw_circle_filled(
-        #     self.center_x,
-        #     self.center_y,
-        #     self.weapon.range,
-        #     (100, 100, 255, 20)  # Very soft fill color
-        # )
-
         self.weapon.draw()
         
         if self.previous_base and self.is_collecting:

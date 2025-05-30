@@ -1,7 +1,6 @@
 import arcade
 from weapon import Weapon
 import math
-import time
 
 class Base:
     def __init__(self, x, y, previous_base=None, main_base=None, color=arcade.color.GRAY, player=None):
@@ -10,7 +9,7 @@ class Base:
         self.center_x = x
         self.center_y = y
         self.color = color
-        self.weapon = Weapon(owner=self)
+        self.weapon = Weapon(owner=self, damage=5, range=100, bullet_speed=5, fire_rate=1)
         self.distance_from_base = 0
 
         self.scrap = 0
@@ -26,16 +25,16 @@ class Base:
         self.collected_resources = 0
         self.collection_rate = 5
 
-    def update(self, enemies, bullets, wells):
+    def update(self, enemies, wells):
         self.distance_from_base = math.hypot(self.center_x, self.center_y)
         self.update_rotation(enemies)
         self.weapon.update(enemies, player=self.player)
-        self.weapon.try_fire(enemies, bullets)
+        self.weapon.try_fire(enemies)
 
         if self.collected_resources >= 50:
             self.level += 1
             self.collected_resources = 0
-            self.weapon.level_up(damage=1, range=10, bullet_speed=1, fire_rate=0.05)
+            self.weapon.level_up(damage=1, range=10, bullet_speed=0, fire_rate=0.05)
 
     def update_rotation(self, enemies):
         # Automatically rotate to face the nearest enemy if possible
@@ -82,12 +81,6 @@ class Base:
             self.color,
             tilt_angle=self.rotation
         )
-
-        # # Draw barrel line for visual aiming
-        # end_x = self.center_x + math.cos(math.radians(self.rotation)) * 20
-        # end_y = self.center_y + math.sin(math.radians(self.rotation)) * 20
-
-        # arcade.draw_line(self.center_x, self.center_y, end_x, end_y, arcade.color.YELLOW, 2)
 
         # Draw level text
         arcade.draw_text(

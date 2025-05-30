@@ -15,7 +15,6 @@ class GameWindow(arcade.Window):
         arcade.set_background_color(arcade.color.DARK_SLATE_GRAY)
         self.player = None
         self.enemies = []
-        self.bullets = []
         self.wells = []
         self._keys = {}
 
@@ -29,9 +28,12 @@ class GameWindow(arcade.Window):
     def setup(self):
         self.player = Player(0, 0)
         # Spawn 10 random wells
-        for _ in range(10):
-            well = ResourceWell(x_max=1000, y_max=1000, capacity=100, radius=75)
-            self.wells.append(well)
+
+        well = ResourceWell(x=250, y=250, capacity=100, radius=75)
+        self.wells.append(well)
+        well = ResourceWell(x=-250, y=250, capacity=100, radius=75)
+        self.wells.append(well)
+
 
         self.ui_panel = UIPanel(self.player)
 
@@ -53,12 +55,6 @@ class GameWindow(arcade.Window):
 
         # Draw GUI
         self.ui_panel.draw()
-
-        view = self.camera.viewport
-        left = view.left
-        right = view.right
-        bottom = view.bottom
-        top = view.top
         # Compute screen center from player position
         center_x = self.player.center_x
         center_y = self.player.center_y
@@ -86,16 +82,12 @@ class GameWindow(arcade.Window):
 
                 arcade.draw_triangle_filled(tip_x, tip_y, left_x, left_y, right_x, right_y, arcade.color.WHITE)
 
-
-
     def on_update(self, delta_time):
-        self.player.update(self.enemies, self.bullets, self._keys, self.wells)
+        self.player.update(self.enemies, self._keys, self.wells)
         self.enemies = [e for e in self.enemies if not e.dead]
 
         for enemy in self.enemies:
             enemy.update(self.player.main_base)
-
-        # self.bases[0].weapon.level_up(damage=1, range=10, bullet_speed=1, fire_rate=0.05)
 
         self.spawn_enemies()
         self.camera.position = (self.player.center_x, self.player.center_y)

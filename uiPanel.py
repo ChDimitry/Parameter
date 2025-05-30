@@ -46,7 +46,7 @@ class UIPanel:
         collecting_count = len(self.player.active_collecting_nodes)
         scrap = self.player.scrap
         collected_resources = self.player.main_base.collected_resources 
-        distance = int(self.player.distance_from_base)
+        distance = int(self.player.distance_from_node)
 
         ui_elements = [base_count, collecting_count, scrap, collected_resources, distance]
 

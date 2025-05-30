@@ -33,10 +33,12 @@ class Weapon:
         self.angle = 0
         self.bullets = []
 
+        self.current_target = None
+
     def can_fire(self):
         return time.time() - self.last_shot_time >= self.fire_rate
 
-    def try_fire(self, enemies, bullets):
+    def try_fire(self, enemies):
         if not self.can_fire():
             return
 
@@ -45,28 +47,31 @@ class Weapon:
                 enemy.center_x - self.owner.center_x,
                 enemy.center_y - self.owner.center_y
             )
-            if dist < self.range and not enemy.is_dying:
+
+            if dist < self.range and not enemy.is_dying and self.current_target != enemy:
+                self.current_target = enemy
                 self.angle = math.atan2(
                     enemy.center_y - self.owner.center_y,
                     enemy.center_x - self.owner.center_x
                 )
 
                 # Apply angle offset for visual arc
-                angle_offset = math.radians(random.uniform(-40, 40))
+                angle_offset = math.radians(random.uniform(-45, 45))
                 firing_angle = self.angle + angle_offset
-                # if not enemy.is_dying:
+
                 self.bullets.append(
                     Bullet(
                         x=self.owner.center_x,
                         y=self.owner.center_y,
                         dx=math.cos(firing_angle) * self.bullet_speed,
                         dy=math.sin(firing_angle) * self.bullet_speed,
-                        radius=3,
+                        radius=4,
                         damage=self.damage,
                         color=arcade.color.WHITE_SMOKE,
                         target=enemy
                     )
                 )
+
                 self.last_shot_time = time.time()
                 break
 
@@ -88,12 +93,12 @@ class Weapon:
                     to_target_x /= distance
                     to_target_y /= distance
 
-                    steer_strength = 0.2  # lower = wider arc
-                    bullet.dx = (1 - steer_strength) * bullet.dx + steer_strength * to_target_x * self.bullet_speed
+                    steer_strength = 0.1
+                    bullet.dx = (1 - steer_strength) * bullet.dx + steer_strength * to_target_x * self.bullet_speed 
                     bullet.dy = (1 - steer_strength) * bullet.dy + steer_strength * to_target_y * self.bullet_speed
 
             # Save current position to trail
-            bullet.trail.append((bullet.x, bullet.y, int(255 * bullet.lifespan / 2.0)))
+            bullet.trail.append((bullet.x, bullet.y, int(100 * bullet.lifespan / 2.0)))
             if len(bullet.trail) > 10:
                 bullet.trail.pop(0)
 
@@ -111,6 +116,9 @@ class Weapon:
                 if dist < bullet.radius + enemy.radius:
                     enemy.health -= bullet.damage
                     enemy.add_hit_particles(math.atan2(bullet.dy, bullet.dx))
+
+                    # When the enemy dies self.current_target will become None and the owner will search for a new enemy to shoot
+
                     if enemy.health <= 0:
                         player.scrap += 1
                     if bullet in self.bullets:

@@ -2,7 +2,7 @@ import arcade
 import math
 import time
 from dataclasses import dataclass
-from config import PLAYER_SPEED, KILOMETER, BASE_COST
+from config import KILOMETER, BASE_COST
 from weapon import Weapon
 from base import Base
 from node import Node
@@ -24,7 +24,7 @@ class Player:
         self.center_y = y
         self.color = arcade.color.BLUE_YONDER
         self.weapon = Weapon(owner=self, damage=5, range=100, bullet_speed=5, fire_rate=0.5)
-        self.distance_from_base = 0
+        self.distance_from_node = 0
         self.scrap = 0
         self.maximum_capable_distance = 3
         self.player_speed = 0
@@ -50,8 +50,6 @@ class Player:
         self.last_base_spawn_time = 0
         self.base_spawn_cooldown = 0.5
         self.collecting_bases = 0
-
-        self.active_flows: list[Flow] = []
         self.active_collecting_nodes = set()
 
     def update_movement(self, keys):
@@ -122,7 +120,7 @@ class Player:
 
     def try_spawn_node(self, wells):
         # Check if player can spawn a new node
-        if self.scrap >= BASE_COST and time.time() - self.last_base_spawn_time >= self.base_spawn_cooldown and self.distance_from_base < self.maximum_capable_distance:
+        if self.scrap >= BASE_COST and time.time() - self.last_base_spawn_time >= self.base_spawn_cooldown and self.distance_from_node < self.maximum_capable_distance:
             prev_base = self.nodes[-1] if self.nodes else None
             new_node = Node(self.center_x, self.center_y, previous_base=prev_base, main_base=self.nodes[0], color=arcade.color.BABY_BLUE, player=self)
 
@@ -144,32 +142,21 @@ class Player:
             
         self.update_movement(keys)
 
-    def update(self, enemies, bullets, keys, wells):
-        self.distance_from_base = get_distance(
+    def update(self, enemies, keys, wells):
+        # Calculate distance from the last node
+        self.distance_from_node = get_distance(
             self.center_x, self.nodes[-1].center_x,
             self.center_y, self.nodes[-1].center_y
         ) / KILOMETER
 
         self.handle_input(keys, wells)
         self.weapon.update(enemies, self)
-        self.weapon.try_fire(enemies, bullets)
-
-        self.active_flows.clear()
+        self.weapon.try_fire(enemies)
 
         for node in self.nodes:
             # Update each node's state only it is collecting
             if node.is_collecting:
-                node.update(enemies, bullets, wells)
-                self.active_collecting_nodes.add(node)
-                # Add flow
-                self.active_flows.append(
-                    Flow(
-                    x1=node.center_x,
-                    y1=node.center_y,
-                    x2=node.main_base.center_x,
-                    y2=node.main_base.center_y,
-                    width=2,
-                    color=arcade.color.LIGHT_BLUE))
+                node.update(enemies, wells)
             else:
                 self.active_collecting_nodes.discard(node)
 
@@ -177,7 +164,7 @@ class Player:
         points = [(0, 0)] + [(b.center_x, b.center_y) for b in self.nodes] + [(self.center_x, self.center_y)]
         arcade.draw_line_strip(points[:-1], (100, 255, 100, 50), 3)
 
-        if self.distance_from_base <= self.maximum_capable_distance:
+        if self.distance_from_node <= self.maximum_capable_distance:
             arcade.draw_line(points[-2][0], points[-2][1], points[-1][0], points[-1][1], (100, 255, 100, 50), 1)
         else:
             arcade.draw_line(self.center_x, self.center_y, self.nodes[-1].center_x, self.nodes[-1].center_y, (0, 0, 0, 50), 1)

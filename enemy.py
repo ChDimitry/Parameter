@@ -61,12 +61,12 @@ class Enemy:
 
     def add_hit_particles(self, angle):
         for _ in range(6):
-            offset_angle = angle + math.radians(0) + math.radians((random.random() - 0.5) * 40)
+            offset_angle = angle + math.radians(0) + math.radians((random.random() - 0.1) * 40)
             speed = 2 + (random.random() * 1.5)
             dx = math.cos(offset_angle) * speed
             dy = math.sin(offset_angle) * speed
             self.hit_particles.append((self.center_x, self.center_y, dx, dy, 15))
-        # for _ in range(3):
+
         self.ground_particles.append((self.center_x, self.center_y, 60))
 
         if self.health <= 0 and not self.is_dying:
