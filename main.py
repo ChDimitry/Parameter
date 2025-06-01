@@ -1,6 +1,7 @@
 import arcade
 import random
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
+from constants import GROUND_COLOR
 from player import Player
 from enemy import Enemy
 from resource_well import ResourceWell
@@ -12,11 +13,12 @@ from uiPanel import UIPanel
 class GameWindow(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Outer Parameter")
-        arcade.set_background_color(arcade.color.DARK_SLATE_GRAY)
+        arcade.set_background_color(GROUND_COLOR)
         self.player = None
         self.enemies = []
         self.wells = []
         self._keys = {}
+        self.flora_list = arcade.SpriteList()
 
         self.time_passed = 0
 
@@ -27,21 +29,37 @@ class GameWindow(arcade.Window):
 
     def setup(self):
         self.player = Player(0, 0)
-        # Spawn 10 random wells
 
-        well = ResourceWell(x=250, y=250, capacity=100, radius=75)
+        well = ResourceWell(x=200, y=200, capacity=5, radius=75)
         self.wells.append(well)
-        well = ResourceWell(x=-250, y=250, capacity=100, radius=75)
+        well = ResourceWell(x=-200, y=200, capacity=5, radius=75)
         self.wells.append(well)
-
+        well = ResourceWell(x=-200, y=-200, capacity=5, radius=75)
+        self.wells.append(well)
+        well = ResourceWell(x=200, y=-200, capacity=5, radius=75)
+        self.wells.append(well)
+        well = ResourceWell(x=400, y=400, capacity=10, radius=75)
+        self.wells.append(well)
+        well = ResourceWell(x=-400, y=400, capacity=10, radius=75)
+        self.wells.append(well)
+        well = ResourceWell(x=-400, y=-400, capacity=10, radius=75)
+        self.wells.append(well)
+        well = ResourceWell(x=400, y=-400, capacity=10, radius=75)
+        self.wells.append(well)
 
         self.ui_panel = UIPanel(self.player)
+
+        for _ in range(250):
+            sprite = arcade.SpriteCircle(radius=50, color=(30, 60, 30, 10), soft=True)
+            sprite.center_x = random.randint(-2000, 2000)
+            sprite.center_y = random.randint(-2000, 2000)
+            self.flora_list.append(sprite)
+
 
     def on_draw(self):
         self.clear()
         # Draw world
         self.camera.use()
-
         # Draw wells
         for well in self.wells:
             well.draw()
@@ -50,6 +68,8 @@ class GameWindow(arcade.Window):
         
         for enemy in self.enemies:
             enemy.draw()
+
+        self.flora_list.draw()
 
         self.gui_camera.use()
 
@@ -85,6 +105,7 @@ class GameWindow(arcade.Window):
     def on_update(self, delta_time):
         self.player.update(self.enemies, self._keys, self.wells)
         self.enemies = [e for e in self.enemies if not e.dead]
+        self.wells = [w for w in self.wells if w.active]
 
         for enemy in self.enemies:
             enemy.update(self.player.main_base)

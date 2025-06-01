@@ -2,6 +2,7 @@ import arcade
 import math
 import random
 from common import get_distance
+from constants import ENEMY_COLOR
 
 class Enemy:
     def __init__(self, x, y, speed, health, damage):
@@ -11,7 +12,7 @@ class Enemy:
         self.health = health
         self.damage = damage
         self.radius = 5
-        self.color = arcade.color.RED
+        self.color = ENEMY_COLOR
         self.hit_particles = []  # list of (x, y, dx, dy, life)
         self.ground_particles = []  # list of (x, y, life)
         self.is_dying = False
@@ -45,7 +46,7 @@ class Enemy:
         # Draw ground particles
         for x, y, life in self.ground_particles:
             alpha = max(10, int(255 * (life / 60)))
-            color = arcade.color.DARK_BROWN[:3] + (alpha,)
+            color = ENEMY_COLOR[:3] + (alpha,)
             arcade.draw_circle_filled(x, y, 5, color)
 
         # Draw enemy
@@ -56,7 +57,7 @@ class Enemy:
     def draw_hit(self):
         for x, y, dx, dy, life in self.hit_particles:
             alpha = max(30, int(255 * (life / 15)))
-            color = arcade.color.RED[:3] + (alpha,)
+            color = ENEMY_COLOR[:3] + (alpha,)
             arcade.draw_circle_filled(x, y, 2, color)
 
     def add_hit_particles(self, angle):

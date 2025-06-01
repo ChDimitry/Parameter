@@ -5,6 +5,8 @@ from common import get_distance
 from dataclasses import dataclass
 from typing import Tuple, Optional
 import random
+from constants import BULLET_COLOR
+
 
 @dataclass
 class Bullet:
@@ -15,7 +17,7 @@ class Bullet:
     radius: float
     damage: int
     color: Tuple[int, int, int, int]
-    lifespan: float = 2.0
+    lifespan: float = 1.5
     target: Optional[object] = None
     trail: list = None  # list of (x, y, alpha)
 
@@ -43,11 +45,11 @@ class Weapon:
             return
 
         for enemy in enemies:
-            dist = math.hypot(
-                enemy.center_x - self.owner.center_x,
-                enemy.center_y - self.owner.center_y
+            dist = get_distance(
+                self.owner.center_x, enemy.center_x,
+                self.owner.center_y, enemy.center_y
             )
-
+            # Check if the enemy is within range and not dying
             if dist < self.range and not enemy.is_dying and self.current_target != enemy:
                 self.current_target = enemy
                 self.angle = math.atan2(
@@ -67,8 +69,8 @@ class Weapon:
                         dy=math.sin(firing_angle) * self.bullet_speed,
                         radius=4,
                         damage=self.damage,
-                        color=arcade.color.WHITE_SMOKE,
-                        target=enemy
+                        color=BULLET_COLOR,
+                        target=self.current_target
                     )
                 )
 
@@ -97,14 +99,14 @@ class Weapon:
                     bullet.dx = (1 - steer_strength) * bullet.dx + steer_strength * to_target_x * self.bullet_speed 
                     bullet.dy = (1 - steer_strength) * bullet.dy + steer_strength * to_target_y * self.bullet_speed
 
-            # Save current position to trail
-            bullet.trail.append((bullet.x, bullet.y, int(100 * bullet.lifespan / 2.0)))
-            if len(bullet.trail) > 10:
-                bullet.trail.pop(0)
-
             bullet.x += bullet.dx
             bullet.y += bullet.dy
             bullet.lifespan -= 1 / 60
+
+            # Save current position to trail
+            bullet.trail.append((bullet.x, bullet.y, int(255 * bullet.lifespan / 7.0)))
+            if len(bullet.trail) > 7:
+                bullet.trail.pop(0)
 
         for bullet in self.bullets[:]:
             if bullet.lifespan <= 0:
@@ -130,8 +132,9 @@ class Weapon:
             # Draw trail
             for tx, ty, alpha in bullet.trail:
                 size = 2
-                color = arcade.color.GRAY[:3] + (max(30, alpha),)
-                arcade.draw_circle_filled(tx, ty, size, color)
+                color = BULLET_COLOR[:3] + (max(10, alpha),)
+                arcade.draw_circle_filled(tx, ty, size, color, num_segments=10)
 
             # Draw main bullet
             arcade.draw_circle_filled(bullet.x, bullet.y, bullet.radius, bullet.color)
+            # arcade.draw_circle_filled(bullet.x, bullet.y, bullet.radius + 1, (255, 255, 255, 100))

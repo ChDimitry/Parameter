@@ -3,6 +3,7 @@ import math
 import time
 from dataclasses import dataclass
 from config import KILOMETER, BASE_COST
+from constants import NODE_CONNECTION_LINE_COLOR, PLAYER_COLOR
 from weapon import Weapon
 from base import Base
 from node import Node
@@ -22,11 +23,12 @@ class Player:
     def __init__(self, x, y):
         self.center_x = x
         self.center_y = y
-        self.color = arcade.color.BLUE_YONDER
+        self.color = PLAYER_COLOR
         self.weapon = Weapon(owner=self, damage=5, range=100, bullet_speed=5, fire_rate=0.5)
         self.distance_from_node = 0
-        self.scrap = 0
-        self.maximum_capable_distance = 3
+        self.scrap = 100
+        self.maximum_node_distance = 1.5
+        self.minimum_node_distance = 1
         self.player_speed = 0
 
         # Momentum properties
@@ -43,7 +45,7 @@ class Player:
         self.rotation_speed = 2
 
         # Initialize player nodes
-        self.nodes: list = [Base(0, 0, color=arcade.color.GOLD, player=self)]
+        self.nodes: list = [Base(0, 0, player=self)]
         self.main_base = self.nodes[0]
         self.main_base.main_base = self.main_base
 
@@ -51,6 +53,8 @@ class Player:
         self.base_spawn_cooldown = 0.5
         self.collecting_bases = 0
         self.active_collecting_nodes = set()
+        self.closest_node = None
+        self.current_node_id: int = 0
 
     def update_movement(self, keys):
         dx = dy = 0
@@ -120,16 +124,14 @@ class Player:
 
     def try_spawn_node(self, wells):
         # Check if player can spawn a new node
-        if self.scrap >= BASE_COST and time.time() - self.last_base_spawn_time >= self.base_spawn_cooldown and self.distance_from_node < self.maximum_capable_distance:
-            prev_base = self.nodes[-1] if self.nodes else None
-            new_node = Node(self.center_x, self.center_y, previous_base=prev_base, main_base=self.nodes[0], color=arcade.color.BABY_BLUE, player=self)
-
-            # Check if new base is within any well's radius
-            for well in wells:
-                if get_distance(new_node.center_x, well.center_x, new_node.center_y, well.center_y) < well.radius:
-                    new_node.is_collecting = True
-                    new_node.assigned_well = well
-                    break
+        if self.scrap >= BASE_COST and \
+        time.time() - self.last_base_spawn_time >= self.base_spawn_cooldown and \
+        self.distance_from_node < self.maximum_node_distance and \
+        self.distance_from_node > self.minimum_node_distance:
+            # Create a new node at the player's position
+            closest_node = self.closest_node if self.closest_node else self.main_base
+            new_node = Node(self.current_node_id, self.center_x, self.center_y, closest_node=closest_node, main_base=self.main_base, player=self)
+            self.current_node_id += 1
 
             self.nodes.append(new_node)
             self.last_base_spawn_time = time.time()
@@ -142,11 +144,17 @@ class Player:
             
         self.update_movement(keys)
 
+    def update_closest_node(self):
+        if not self.nodes:
+            return None
+        self.closest_node = min(self.nodes, key=lambda node: get_distance(self.center_x, node.center_x, self.center_y, node.center_y))
+
     def update(self, enemies, keys, wells):
-        # Calculate distance from the last node
+        self.update_closest_node()
+        # Calculate distance from the closest node
         self.distance_from_node = get_distance(
-            self.center_x, self.nodes[-1].center_x,
-            self.center_y, self.nodes[-1].center_y
+            self.center_x, self.closest_node.center_x,
+            self.center_y, self.closest_node.center_y
         ) / KILOMETER
 
         self.handle_input(keys, wells)
@@ -154,28 +162,32 @@ class Player:
         self.weapon.try_fire(enemies)
 
         for node in self.nodes:
-            # Update each node's state only it is collecting
+            node.update(enemies, wells)
             if node.is_collecting:
-                node.update(enemies, wells)
+                self.active_collecting_nodes.add(node)
             else:
                 self.active_collecting_nodes.discard(node)
 
+
     def draw(self):
-        points = [(0, 0)] + [(b.center_x, b.center_y) for b in self.nodes] + [(self.center_x, self.center_y)]
-        arcade.draw_line_strip(points[:-1], (100, 255, 100, 50), 3)
+        # Draw a line to the closest node if it exists
+        if self.closest_node:
+            arcade.draw_line(
+                self.center_x, self.center_y,
+                self.closest_node.center_x, self.closest_node.center_y,
+                NODE_CONNECTION_LINE_COLOR if (self.distance_from_node < self.maximum_node_distance and self.distance_from_node > self.minimum_node_distance) else (0, 0, 0, 50), 1
+            )
 
-        if self.distance_from_node <= self.maximum_capable_distance:
-            arcade.draw_line(points[-2][0], points[-2][1], points[-1][0], points[-1][1], (100, 255, 100, 50), 1)
-        else:
-            arcade.draw_line(self.center_x, self.center_y, self.nodes[-1].center_x, self.nodes[-1].center_y, (0, 0, 0, 50), 1)
-
+        # Draw the player as a rectangle
         rect = arcade.Rect(0, 0, 0, 0, self.width, self.height, self.center_x, self.center_y)
         arcade.draw_rect_filled(rect, self.color, tilt_angle=self.rotation)
 
-        end_x = self.center_x + math.cos(math.radians(self.rotation)) * 20
-        end_y = self.center_y + math.sin(math.radians(self.rotation)) * 20
-        arcade.draw_line(self.center_x, self.center_y, end_x, end_y, arcade.color.RED, 1)
+        # Draw a line indicating the direction of the player
+        # end_x = self.center_x + math.cos(math.radians(self.rotation)) * 20
+        # end_y = self.center_y + math.sin(math.radians(self.rotation)) * 20
+        # arcade.draw_line(self.center_x, self.center_y, end_x, end_y, arcade.color.RED, 1)
 
+        # Draw the weapon
         self.weapon.draw()
 
         for node in self.nodes:
