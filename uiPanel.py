@@ -2,9 +2,7 @@ import arcade
 from config import SCREEN_HEIGHT, BASE_COST
 
 class UIPanel:
-    def __init__(self, player):
-        self.player = player
-
+    def __init__(self):
         # Panel properties
         self.width = 200
         self.height = 200
@@ -23,7 +21,7 @@ class UIPanel:
         self.background_color = arcade.color.BLACK_OLIVE
         self.border_color = arcade.color.ASH_GREY
 
-    def draw(self):
+    def draw(self, player, nodes):
         # Draw panel background using Rect
         rect = arcade.Rect(
             left=self.center_x - self.width // 2,
@@ -42,13 +40,11 @@ class UIPanel:
         )
 
         # Gather player info
-        node_count = len(self.player.nodes)
-        collecting_count = len(self.player.active_collecting_nodes)
-        scrap = self.player.scrap
-        collected_resources = self.player.main_base.collected_resources 
-        distance = int(self.player.distance_from_node)
-
-        ui_elements = [node_count, collecting_count, scrap, collected_resources, distance]
+        node_count = len(nodes)
+        collecting_count = len(player._active_collecting_nodes)
+        scrap = player.scrap
+        collected_resources = player.main_base.collected_resources 
+        distance = int(player.distance_from_node)
 
         # Draw text
         arcade.draw_text(f"# Nodes: {node_count}", self.center_x - self.x_shift, self.center_y + self.y_shift, self.text_color, self.font_size, font_name=self.font_name)

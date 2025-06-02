@@ -5,7 +5,7 @@ from common import get_distance
 from dataclasses import dataclass
 from typing import Tuple, Optional
 import random
-from constants import BULLET_COLOR
+from constants import BULLET_COLOR, BASE_RANGE_COLOR
 
 
 @dataclass
@@ -50,7 +50,7 @@ class Weapon:
                 self.owner.center_y, enemy.center_y
             )
             # Check if the enemy is within range and not dying
-            if dist < self.range and not enemy.is_dying and self.current_target != enemy:
+            if dist < self.range and not enemy.is_dying:
                 self.current_target = enemy
                 self.angle = math.atan2(
                     enemy.center_y - self.owner.center_y,
@@ -83,7 +83,8 @@ class Weapon:
         self.bullet_speed += bullet_speed
         self.fire_rate = max(0.05, self.fire_rate - fire_rate)
 
-    def update(self, enemies, player):
+    def update(self, enemies):
+        # Update bullets
         for bullet in self.bullets:
             if bullet.target and bullet.lifespan > 0:
                 # Homing toward target
@@ -95,7 +96,7 @@ class Weapon:
                     to_target_x /= distance
                     to_target_y /= distance
 
-                    steer_strength = 0.1
+                    steer_strength = 0.2
                     bullet.dx = (1 - steer_strength) * bullet.dx + steer_strength * to_target_x * self.bullet_speed 
                     bullet.dy = (1 - steer_strength) * bullet.dy + steer_strength * to_target_y * self.bullet_speed
 
@@ -116,13 +117,10 @@ class Weapon:
             for enemy in enemies[:]:
                 dist = get_distance(bullet.x, enemy.center_x, bullet.y, enemy.center_y)
                 if dist < bullet.radius + enemy.radius:
-                    enemy.health -= bullet.damage
+                    enemy.current_health -= bullet.damage
                     enemy.add_hit_particles(math.atan2(bullet.dy, bullet.dx))
 
                     # When the enemy dies self.current_target will become None and the owner will search for a new enemy to shoot
-
-                    if enemy.health <= 0:
-                        player.scrap += 1
                     if bullet in self.bullets:
                         self.bullets.remove(bullet)
                     break
@@ -138,3 +136,33 @@ class Weapon:
             # Draw main bullet
             arcade.draw_circle_filled(bullet.x, bullet.y, bullet.radius, bullet.color)
             # arcade.draw_circle_filled(bullet.x, bullet.y, bullet.radius + 1, (255, 255, 255, 100))
+
+
+        # Fade-in from outer ring inward using outlines
+        num_rings = 20
+        max_radius = self.range
+        base_color = BASE_RANGE_COLOR[:3]
+        max_alpha = BASE_RANGE_COLOR[3] if len(BASE_RANGE_COLOR) > 3 else 50
+
+        # for i in range(num_rings):
+        #     fade_factor = 1 - (i / num_rings)
+        #     radius = max_radius * fade_factor
+        #     alpha = int(max_alpha * fade_factor**2)  # Outer = most visible
+
+        #     color = (*base_color, alpha)
+
+        #     arcade.draw_circle_outline(
+        #         self.owner.center_x,
+        #         self.owner.center_y,
+        #         radius,
+        #         color,
+        #         border_width=self.outline_thickness
+        #     )
+
+        arcade.draw_circle_outline(
+            self.owner.center_x,
+            self.owner.center_y,
+            self.range,
+            BASE_RANGE_COLOR,
+            border_width=4
+        )

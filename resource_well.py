@@ -11,8 +11,10 @@ class ResourceWell:
         self.active = True
 
         self.last_transfer = 0
+        
+        self.assigned_node = None 
 
-    def draw(self):
+    def draw(self, time_elapsed=0):
         arcade.draw_circle_filled(
             self.center_x,
             self.center_y,
@@ -23,7 +25,7 @@ class ResourceWell:
             self.center_x,
             self.center_y,
             self.radius,
-            RESOURCE_WELL_OUTLINE_COLOR,
+            RESOURCE_WELL_OUTLINE_COLOR if self.assigned_node else (100, 100, 100, 100),
             2
         )
         # Show remaining resource text
@@ -36,6 +38,14 @@ class ResourceWell:
             anchor_y="center"
         )
 
-    def is_entity_inside(self, entity):
-        dist = ((entity.center_x - self.center_x) ** 2 + (entity.center_y - self.center_y) ** 2) ** 0.5
-        return dist <= self.radius
+        # Draw collection rate of node
+        if self.assigned_node:
+            arcade.draw_text(
+                f"Rate: 1 Scrap/{self.assigned_node.collection_rate}s",
+                self.center_x, self.center_y - 15,
+                RESOURCE_WELL_TEXT_COLOR,
+                font_size=10,
+                anchor_x="center",
+                anchor_y="center"
+            )
+            

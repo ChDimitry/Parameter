@@ -4,9 +4,12 @@ from config import SCREEN_WIDTH, SCREEN_HEIGHT
 from constants import GROUND_COLOR
 from player import Player
 from enemy import Enemy
+from anchor_node import AnchorNode
+from base import Base
 from resource_well import ResourceWell
+# from obstacle import Obstacle
 import arcade.camera
-from common import get_distance
+from common import get_distance, is_entity_inside
 import math
 from uiPanel import UIPanel
 
@@ -14,11 +17,25 @@ class GameWindow(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Outer Parameter")
         arcade.set_background_color(GROUND_COLOR)
-        self.player = None
+
         self.enemies = []
-        self.wells = []
+        self.wells: list = []
+        self.main_base = Base(0, 0, player=None)
+
+        self.anchor_node_north = AnchorNode(1, 0, 100, closest_node=self.main_base, main_base=self.main_base)
+        self.anchor_node_west = AnchorNode(2, -100, 0, closest_node=self.main_base, main_base=self.main_base)
+        self.anchor_node_east = AnchorNode(3, 100, 0, closest_node=self.main_base, main_base=self.main_base)
+        self.anchor_node_south = AnchorNode(4, 0, -100, closest_node=self.main_base, main_base=self.main_base)
+
+        self.player = Player(0, 0, main_base=self.main_base)
+        self.main_base.player = self.player
+        self.anchor_node_north.player = self.player
+        self.nodes: list = [self.main_base, self.anchor_node_north, self.anchor_node_west, self.anchor_node_east, self.anchor_node_south]
+
+
         self._keys = {}
         self.flora_list = arcade.SpriteList()
+        self.obstacles = arcade.SpriteList()
 
         self.time_passed = 0
 
@@ -28,33 +45,37 @@ class GameWindow(arcade.Window):
         self.ui_panel = None
 
     def setup(self):
-        self.player = Player(0, 0)
+        
 
         well = ResourceWell(x=200, y=200, capacity=5, radius=75)
         self.wells.append(well)
-        well = ResourceWell(x=-200, y=200, capacity=5, radius=75)
-        self.wells.append(well)
-        well = ResourceWell(x=-200, y=-200, capacity=5, radius=75)
-        self.wells.append(well)
-        well = ResourceWell(x=200, y=-200, capacity=5, radius=75)
-        self.wells.append(well)
-        well = ResourceWell(x=400, y=400, capacity=10, radius=75)
-        self.wells.append(well)
-        well = ResourceWell(x=-400, y=400, capacity=10, radius=75)
-        self.wells.append(well)
-        well = ResourceWell(x=-400, y=-400, capacity=10, radius=75)
-        self.wells.append(well)
-        well = ResourceWell(x=400, y=-400, capacity=10, radius=75)
-        self.wells.append(well)
+        # well = ResourceWell(x=-200, y=200, capacity=5, radius=75)
+        # self.wells.append(well)
+        # well = ResourceWell(x=-200, y=-200, capacity=5, radius=75)
+        # self.wells.append(well)
 
-        self.ui_panel = UIPanel(self.player)
+        # well = ResourceWell(x=400, y=400, capacity=10, radius=75)
+        # self.wells.append(well)
+        # well = ResourceWell(x=-400, y=400, capacity=10, radius=75)
+        # self.wells.append(well)
 
-        for _ in range(250):
-            sprite = arcade.SpriteCircle(radius=50, color=(30, 60, 30, 10), soft=True)
+        well = ResourceWell(x=400, y=-400, capacity=25, radius=75)
+        self.wells.append(well)
+        well = ResourceWell(x=-600, y=-600, capacity=100, radius=75)
+        self.wells.append(well)
+        
+        # obstacle = Obstacle(x=200, y=-200, radius=200)
+        # self.obstacles.append(obstacle)
+        # obstacle = Obstacle(x=-400, y=-400, radius=200)
+        # self.obstacles.append(obstacle)
+
+        self.ui_panel = UIPanel()
+
+        for _ in range(500):
+            sprite = arcade.SpriteCircle(radius=100, color=(30, 40, 30, 10), soft=True)
             sprite.center_x = random.randint(-2000, 2000)
             sprite.center_y = random.randint(-2000, 2000)
             self.flora_list.append(sprite)
-
 
     def on_draw(self):
         self.clear()
@@ -62,19 +83,24 @@ class GameWindow(arcade.Window):
         self.camera.use()
         # Draw wells
         for well in self.wells:
-            well.draw()
+            well.draw(self.time_passed * 100)
 
         self.player.draw()
         
         for enemy in self.enemies:
             enemy.draw()
 
+        for node in self.nodes:
+            node.draw()
+
+        # self.obstacles.draw()
+
         self.flora_list.draw()
 
         self.gui_camera.use()
 
         # Draw GUI
-        self.ui_panel.draw()
+        self.ui_panel.draw(self.player, self.nodes)
         # Compute screen center from player position
         center_x = self.player.center_x
         center_y = self.player.center_y
@@ -103,16 +129,28 @@ class GameWindow(arcade.Window):
                 arcade.draw_triangle_filled(tip_x, tip_y, left_x, left_y, right_x, right_y, arcade.color.WHITE)
 
     def on_update(self, delta_time):
-        self.player.update(self.enemies, self._keys, self.wells)
+        self.player.update(self.enemies, self._keys, self.obstacles, self.nodes)
         self.enemies = [e for e in self.enemies if not e.dead]
         self.wells = [w for w in self.wells if w.active]
 
         for enemy in self.enemies:
-            enemy.update(self.player.main_base)
+            enemy.update(self.player.main_base, self.player)
+            # Check if enemy touched the main base, if so, end the game
+            if is_entity_inside(enemy, self.main_base, radius=1):
+                arcade.close_window()
+                print("Game Over! The enemy reached the main base.")
+                return
+
+        for node in self.nodes:
+            node.update(self.enemies, self.wells)
+            # if node.is_collecting:
+            #     self.active_collecting_nodes.add(node)
+            # else:
+            #     self.active_collecting_nodes.discard(node)
 
         self.spawn_enemies()
         self.camera.position = (self.player.center_x, self.player.center_y)
-        self.time_passed += 0.001  # Increment time passed for enemy spawning logic
+        self.time_passed += 0.0005  # Increment time passed for enemy spawning logic
 
     def spawn_enemies(self):
         if len(self.enemies) < 1 + int(self.time_passed):

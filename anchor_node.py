@@ -5,7 +5,7 @@ import math
 import time
 from common import is_entity_inside
 
-class Node:
+class AnchorNode:
     def __init__(self, _id,  x, y, closest_node=None, main_base=None, player=None):
         self._id = _id
         self.player = player
