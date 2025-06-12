@@ -50,7 +50,7 @@ class Weapon:
                 self.owner.center_y, enemy.center_y
             )
             # Check if the enemy is within range and not dying
-            if dist < self.range and not enemy.is_dying:
+            if dist < self.range and not enemy.scrap_dropped:
                 self.current_target = enemy
                 self.angle = math.atan2(
                     enemy.center_y - self.owner.center_y,

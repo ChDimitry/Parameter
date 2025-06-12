@@ -1,4 +1,4 @@
-NODE_CONNECTION_LINE_COLOR = (180, 180, 180, 30)     # Light gray, semi-transparent
+NODE_CONNECTION_LINE_COLOR = (180, 180, 180, 10)     # Light gray, semi-transparent
 NODE_GLOW_COLOR = (255, 255, 255)                    # Soft white glow
 RESOURCE_FLOW_COLOR = (255, 255, 255, 100)                # White
 
@@ -19,4 +19,4 @@ OBSTACLE_COLOR = (7, 25, 82)
 ENEMY_COLOR = (255, 255, 255)
 ENEMY_HIT_COLOR = (255, 0, 0)                          # Bright red for hits                        
 
-REQUIRED_SCRAP = 10
+REQUIRED_SCRAP = 5

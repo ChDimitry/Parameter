@@ -17,13 +17,14 @@ class Node:
         self.scrap = 0
         self.level = 1
 
-        self.width = 15
+        self.width = 10
 
         self.is_collecting = False
         self.collected = 0
 
         self.closest_node = closest_node
         self.assigned_well = None
+        self.is_inside_well = False
 
         self.link_length = closest_node.link_length + 1
 
@@ -32,8 +33,6 @@ class Node:
     def update(self, enemies, wells):
         # If node is collecting, start updating and shooting and activate the closest node
         if self.is_collecting:
-            # self.weapon.update(enemies, player=self.player)
-            # self.weapon.try_fire(enemies)
             self.closest_node.is_collecting = True
 
         else:
@@ -46,6 +45,7 @@ class Node:
         # Check if inside a resource well
         for well in wells:
             if is_entity_inside(entity=well, object=self, radius=well.radius) and well.active:
+                self.is_inside_well = True
                 self.is_collecting = True # Start collecting if inside a well
                 self.assigned_well = well # Assign the well to this node
                 well.assigned_node = self # Assign this node to the well
@@ -57,8 +57,15 @@ class Node:
             if well.capacity <= 0:
                 well.active = False
 
-        if self.assigned_well and self.assigned_well.capacity <= 0:
+        # This code is silly
+        # TODO: Refactor this logic to be more efficient
+        if self.assigned_well and self.assigned_well.capacity <= 0 and self.is_collecting:
             self.is_collecting = False
+
+        if self.assigned_well and self.assigned_well.capacity <= 0 and self.is_inside_well:
+            self.main_base.weapon.level_up(*self.assigned_well.upgrade_attributes)
+            self.main_base.upgrades.append(self.assigned_well.upgrade_symbol)
+            self.is_inside_well = False
 
     def draw(self):    
         if self.is_collecting:
@@ -72,7 +79,7 @@ class Node:
                     NODE_GLOW_COLOR[:3] + (2.5 * i,)  # Softer alpha per layer
                 )
         else:
-            glow_color = arcade.color.GRAY
+            glow_color = (100, 100, 100, 50)
 
 
         # --- Core Node ---

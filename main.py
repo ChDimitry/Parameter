@@ -7,7 +7,7 @@ from enemy import Enemy
 from anchor_node import AnchorNode
 from base import Base
 from resource_well import ResourceWell
-# from obstacle import Obstacle
+from obstacle import Obstacle
 import arcade.camera
 from common import get_distance, is_entity_inside
 import math
@@ -45,28 +45,23 @@ class GameWindow(arcade.Window):
         self.ui_panel = None
 
     def setup(self):
-        
+                    # self.weapon.level_up(damage=0.50, range=50, bullet_speed=0.25, fire_rate=0.05)
 
-        well = ResourceWell(x=200, y=200, capacity=5, radius=75)
+        well = ResourceWell(x=200, y=200, capacity=5, radius=75, upgrade_attributes=[0, 50, 0, 0], upgrade_type="range")
         self.wells.append(well)
-        # well = ResourceWell(x=-200, y=200, capacity=5, radius=75)
-        # self.wells.append(well)
-        # well = ResourceWell(x=-200, y=-200, capacity=5, radius=75)
-        # self.wells.append(well)
-
-        # well = ResourceWell(x=400, y=400, capacity=10, radius=75)
-        # self.wells.append(well)
-        # well = ResourceWell(x=-400, y=400, capacity=10, radius=75)
-        # self.wells.append(well)
-
-        well = ResourceWell(x=400, y=-400, capacity=25, radius=75)
+        well = ResourceWell(x=200, y=-200, capacity=5, radius=75, upgrade_attributes=[0.5, 0, 0, 0], upgrade_type="damage")
         self.wells.append(well)
-        well = ResourceWell(x=-600, y=-600, capacity=100, radius=75)
+        well = ResourceWell(x=-200, y=-200, capacity=5, radius=75, upgrade_attributes=[0, 0, 0.25, 0], upgrade_type="bullet_speed")
+        self.wells.append(well)
+        well = ResourceWell(x=-200, y=200, capacity=5, radius=75, upgrade_attributes=[0, 0, 0, 0.1], upgrade_type="fire_rate")
+        self.wells.append(well)
+        well = ResourceWell(x=400, y=400, capacity=5, radius=75, upgrade_attributes=[0, 50, 0, 0], upgrade_type="range")
         self.wells.append(well)
         
-        # obstacle = Obstacle(x=200, y=-200, radius=200)
+        
+        # obstacle = Obstacle(x=200, y=-200)
         # self.obstacles.append(obstacle)
-        # obstacle = Obstacle(x=-400, y=-400, radius=200)
+        # obstacle = Obstacle(x=-400, y=-400)
         # self.obstacles.append(obstacle)
 
         self.ui_panel = UIPanel()
@@ -93,7 +88,7 @@ class GameWindow(arcade.Window):
         for node in self.nodes:
             node.draw()
 
-        # self.obstacles.draw()
+        self.obstacles.draw()
 
         self.flora_list.draw()
 

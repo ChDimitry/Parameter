@@ -29,6 +29,8 @@ class Base:
 
         self.link_length = 0
 
+        self.upgrades: list[str] = []
+
     def update(self, enemies, wells):
         self.update_rotation()
         self.weapon.update(enemies)
@@ -37,7 +39,7 @@ class Base:
         if self.collected_resources >= REQUIRED_SCRAP:
             self.level += 1
             self.collected_resources = 0
-            self.weapon.level_up(damage=0.50, range=50, bullet_speed=0.25, fire_rate=0.05)
+            # self.weapon.level_up(damage=0.50, range=50, bullet_speed=0.25, fire_rate=0.05)
     
     def update_rotation(self):
         # Align base rotation toward weapon angle
@@ -51,16 +53,6 @@ class Base:
         self.rotation %= 360
 
     def draw(self):
-        # Draw level text
-        arcade.draw_text(
-            f"Level: {self.level}",
-            self.center_x, self.center_y + 25,
-            arcade.color.WHITE,
-            font_size=11,
-            anchor_x="center",
-            anchor_y="center"
-        )
-
         # # Fade-in from outer ring inward using outlines
         # num_rings = 20
         # max_radius = self.weapon.range
@@ -98,5 +90,30 @@ class Base:
             self.color,
             tilt_angle=self.rotation
         )
+        
+        # Draw level text
+        arcade.draw_text(
+            f"{self.level}",
+            self.center_x, self.center_y,
+            arcade.color.BLACK,
+            font_size=11,
+            anchor_x="center",
+            anchor_y="center"
+        )
+
+        spacing = 15  # Space between symbols
+        total_width = (len(self.upgrades) - 1) * spacing
+        for i, upgrade in enumerate(self.upgrades):
+            x_offset = -total_width / 2 + i * spacing
+            arcade.draw_text(
+                upgrade,
+                self.center_x + x_offset,
+                self.center_y + 25,
+                arcade.color.WHITE,
+                font_size=14,
+                anchor_x="center",
+                anchor_y="center"
+            )
+
 
         self.weapon.draw()
