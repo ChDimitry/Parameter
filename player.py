@@ -44,7 +44,7 @@ class Player:
         self._player_speed = 0
 
         # Resource management
-        self.scrap = 100
+        self.scrap = 0
         self._collecting_bases = 0
         self._active_collecting_nodes = set()
         self._able_to_spawn = True

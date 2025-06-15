@@ -38,6 +38,21 @@ class GameWindow(arcade.Window):
                 "radius": 5,
                 "attributes": [0, 50, 0, 0]
             }
+            , "damage": {
+                "capacity": 5,
+                "radius": 5,
+                "attributes": [0.5, 0, 0, 0]
+            }
+            , "bullet_speed": {
+                "capacity": 5,
+                "radius": 5,
+                "attributes": [0, 0, 0.25, 0]
+            }
+            , "fire_rate": {
+                "capacity": 5,
+                "radius": 5,
+                "attributes": [0, 0, 0, 0.1]
+            }
         }
 
         self._keys = {}
@@ -51,33 +66,131 @@ class GameWindow(arcade.Window):
 
         self.ui_panel = None
 
+    def generate_resource_wells_in_rings(self, ring_configs):
+        """
+        Generate resource wells in concentric rings with optional spacing and upgrade control.
+
+        Each config dictionary can contain:
+            - radius (float): Distance from center for the ring
+            - count (int): Number of wells in this ring
+            - capacity (int, optional): Scrap each well starts with
+            - well_radius (float, optional): Visual radius of well
+            - upgrade_pool (list[str], optional): Allowed upgrade types
+            - min_spacing (float, optional): Minimum distance between wells (applies along arc)
+            - fixed_angles (list[float], optional): If provided, used directly
+        """
+        for config in ring_configs:
+            radius = config['radius']
+            count = config['count']
+            capacity = config.get('capacity', 5)
+            well_radius = config.get('well_radius', 75)
+            upgrade_pool = config.get('upgrade_pool', ["range", "damage", "bullet_speed", "fire_rate"])
+            min_spacing = config.get('min_spacing', 0)  # in pixels along arc
+            fixed_angles = config.get('fixed_angles')
+
+            placed_angles = []
+
+            def is_far_enough(candidate_angle):
+                cx = math.cos(candidate_angle) * radius
+                cy = math.sin(candidate_angle) * radius
+                for existing_angle in placed_angles:
+                    ex = math.cos(existing_angle) * radius
+                    ey = math.sin(existing_angle) * radius
+                    dist = math.hypot(ex - cx, ey - cy)
+                    if dist < min_spacing:
+                        return False
+                return True
+
+            angles = []
+            if fixed_angles and len(fixed_angles) == count:
+                angles = fixed_angles
+            else:
+                attempts = 0
+                while len(angles) < count and attempts < 500:
+                    angle = random.uniform(0, 2 * math.pi)
+                    if min_spacing == 0 or is_far_enough(angle):
+                        angles.append(angle)
+                        placed_angles.append(angle)
+                    attempts += 1
+
+            for angle in angles:
+                x = math.cos(angle) * radius
+                y = math.sin(angle) * radius
+
+                upgrade_type = random.choice(upgrade_pool)
+                attributes = {
+                    "range":        [0, 50, 0, 0],
+                    "damage":       [0.5, 0, 0, 0],
+                    "bullet_speed": [0, 0, 0.25, 0],
+                    "fire_rate":    [0, 0, 0, 0.1]
+                }[upgrade_type]
+
+                well = ResourceWell(
+                    x=x,
+                    y=y,
+                    capacity=capacity,
+                    radius=well_radius,
+                    upgrade_attributes=attributes,
+                    upgrade_type=upgrade_type
+                )
+                self.wells.append(well)
+
+
+
     def setup(self):
-                    # self.weapon.level_up(damage=0.50, range=50, bullet_speed=0.25, fire_rate=0.05)
-
-        well = ResourceWell(x=200, y=200, capacity=5, radius=75, upgrade_attributes=[0, 50, 0, 0], upgrade_type="range")
-        self.wells.append(well)
-        well = ResourceWell(x=200, y=-200, capacity=5, radius=75, upgrade_attributes=[0.5, 0, 0, 0], upgrade_type="damage")
-        self.wells.append(well)
-        well = ResourceWell(x=-200, y=-200, capacity=5, radius=75, upgrade_attributes=[0, 0, 0.25, 0], upgrade_type="bullet_speed")
-        self.wells.append(well)
-        well = ResourceWell(x=-200, y=200, capacity=5, radius=75, upgrade_attributes=[0, 0, 0, 0.1], upgrade_type="fire_rate")
-        self.wells.append(well)
-        well = ResourceWell(x=400, y=400, capacity=5, radius=75, upgrade_attributes=[0, 50, 0, 0], upgrade_type="range")
-        self.wells.append(well)
-        
-        
-        # obstacle = Obstacle(x=200, y=-200)
-        # self.obstacles.append(obstacle)
-        # obstacle = Obstacle(x=-400, y=-400)
-        # self.obstacles.append(obstacle)
-
         self.ui_panel = UIPanel()
+
+        ring_configs = [
+            {
+                "radius": 200,
+                "count": 3,
+                "capacity": 5,
+                "well_radius": 60,
+                "upgrade_pool": ["range"],
+                "min_spacing": 100
+            },
+            {
+                "radius": 500,
+                "count": 5,
+                "capacity": 8,
+                "well_radius": 65,
+                "upgrade_pool": ["damage", "range"],
+                "min_spacing": 180
+            },
+            {
+                "radius": 1000,
+                "count": 7,
+                "capacity": 10,
+                "well_radius": 70,
+                "upgrade_pool": ["bullet_speed"],
+                "min_spacing": 200
+            },
+            {
+                "radius": 2000,
+                "count": 10,
+                "capacity": 12,
+                "well_radius": 75,
+                "upgrade_pool": ["fire_rate", "damage"],
+                "min_spacing": 250
+            },
+            {
+                "radius": 5000,
+                "count": 15,
+                "capacity": 15,
+                "well_radius": 80,
+                "upgrade_pool": ["range", "bullet_speed", "fire_rate"],
+                "min_spacing": 300
+            },
+        ]
+
+        self.generate_resource_wells_in_rings(ring_configs)
 
         for _ in range(500):
             sprite = arcade.SpriteCircle(radius=100, color=(30, 40, 30, 10), soft=True)
             sprite.center_x = random.randint(-2000, 2000)
             sprite.center_y = random.randint(-2000, 2000)
             self.flora_list.append(sprite)
+
 
     def on_draw(self):
         self.clear()
