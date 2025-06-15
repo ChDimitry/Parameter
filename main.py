@@ -32,6 +32,13 @@ class GameWindow(arcade.Window):
         self.anchor_node_north.player = self.player
         self.nodes: list = [self.main_base, self.anchor_node_north, self.anchor_node_west, self.anchor_node_east, self.anchor_node_south]
 
+        self.resource_wells = {
+            "range": {
+                "capacity": 5,
+                "radius": 5,
+                "attributes": [0, 50, 0, 0]
+            }
+        }
 
         self._keys = {}
         self.flora_list = arcade.SpriteList()
