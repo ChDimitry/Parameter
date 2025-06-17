@@ -41,7 +41,7 @@ class UIPanel:
 
         # Gather player info
         node_count = len(nodes)
-        collecting_count = len(player._active_collecting_nodes)
+        collecting_count = len(player.active_collecting_nodes)
         scrap = player.scrap
         collected_resources = player.main_base.collected_resources 
         distance = int(player.distance_from_node)

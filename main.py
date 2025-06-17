@@ -20,14 +20,17 @@ class GameWindow(arcade.Window):
 
         self.enemies = []
         self.wells: list = []
-        self.main_base = Base(0, 0, player=None)
 
-        self.anchor_node_north = AnchorNode(1, 0, 100, closest_node=self.main_base, main_base=self.main_base)
+        # TODO: Move all nodes to the player class 
+        self.main_base = Base(0, 0, player=None)
+        self.anchor_node_north = AnchorNode(1, 0, 100, closest_node=self.main_base, main_base=self.main_base, )
         self.anchor_node_west = AnchorNode(2, -100, 0, closest_node=self.main_base, main_base=self.main_base)
         self.anchor_node_east = AnchorNode(3, 100, 0, closest_node=self.main_base, main_base=self.main_base)
         self.anchor_node_south = AnchorNode(4, 0, -100, closest_node=self.main_base, main_base=self.main_base)
+        ###
 
         self.player = Player(0, 0, main_base=self.main_base)
+
         self.main_base.player = self.player
         self.anchor_node_north.player = self.player
         self.nodes: list = [self.main_base, self.anchor_node_north, self.anchor_node_west, self.anchor_node_east, self.anchor_node_south]
@@ -66,7 +69,7 @@ class GameWindow(arcade.Window):
 
         self.ui_panel = None
 
-    def generate_resource_wells_in_rings(self, ring_configs):
+    def generate_resource_wells(self, ring_configs):
         """
         Generate resource wells in concentric rings with optional spacing and upgrade control.
 
@@ -90,7 +93,7 @@ class GameWindow(arcade.Window):
 
             placed_angles = []
 
-            def is_far_enough(candidate_angle):
+            def _is_far_enough(candidate_angle):
                 cx = math.cos(candidate_angle) * radius
                 cy = math.sin(candidate_angle) * radius
                 for existing_angle in placed_angles:
@@ -108,7 +111,7 @@ class GameWindow(arcade.Window):
                 attempts = 0
                 while len(angles) < count and attempts < 500:
                     angle = random.uniform(0, 2 * math.pi)
-                    if min_spacing == 0 or is_far_enough(angle):
+                    if min_spacing == 0 or _is_far_enough(angle):
                         angles.append(angle)
                         placed_angles.append(angle)
                     attempts += 1
@@ -120,9 +123,9 @@ class GameWindow(arcade.Window):
                 upgrade_type = random.choice(upgrade_pool)
                 attributes = {
                     "range":        [0, 50, 0, 0],
-                    "damage":       [0.5, 0, 0, 0],
-                    "bullet_speed": [0, 0, 0.25, 0],
-                    "fire_rate":    [0, 0, 0, 0.1]
+                    "damage":       [1, 0, 0, 0],
+                    "bullet_speed": [0, 0, 1, 0],
+                    "fire_rate":    [0, 0, 0, 0.5]
                 }[upgrade_type]
 
                 well = ResourceWell(
@@ -142,20 +145,20 @@ class GameWindow(arcade.Window):
 
         ring_configs = [
             {
-                "radius": 200,
+                "radius": 300,
                 "count": 3,
                 "capacity": 5,
                 "well_radius": 60,
                 "upgrade_pool": ["range"],
-                "min_spacing": 100
+                "min_spacing": 150
             },
             {
-                "radius": 500,
+                "radius": 700,
                 "count": 5,
                 "capacity": 8,
                 "well_radius": 65,
                 "upgrade_pool": ["damage", "range"],
-                "min_spacing": 180
+                "min_spacing": 200
             },
             {
                 "radius": 1000,
@@ -163,7 +166,7 @@ class GameWindow(arcade.Window):
                 "capacity": 10,
                 "well_radius": 70,
                 "upgrade_pool": ["bullet_speed"],
-                "min_spacing": 200
+                "min_spacing": 250
             },
             {
                 "radius": 2000,
@@ -171,19 +174,19 @@ class GameWindow(arcade.Window):
                 "capacity": 12,
                 "well_radius": 75,
                 "upgrade_pool": ["fire_rate", "damage"],
-                "min_spacing": 250
+                "min_spacing": 300
             },
             {
                 "radius": 5000,
-                "count": 15,
+                "count": 30,
                 "capacity": 15,
                 "well_radius": 80,
                 "upgrade_pool": ["range", "bullet_speed", "fire_rate"],
-                "min_spacing": 300
+                "min_spacing": 400
             },
         ]
 
-        self.generate_resource_wells_in_rings(ring_configs)
+        self.generate_resource_wells(ring_configs)
 
         for _ in range(500):
             sprite = arcade.SpriteCircle(radius=100, color=(30, 40, 30, 10), soft=True)
@@ -265,7 +268,7 @@ class GameWindow(arcade.Window):
 
         self.spawn_enemies()
         self.camera.position = (self.player.center_x, self.player.center_y)
-        self.time_passed += 0.0005  # Increment time passed for enemy spawning logic
+        self.time_passed += 0.0001  # Increment time passed for enemy spawning logic
 
     def spawn_enemies(self):
         if len(self.enemies) < 1 + int(self.time_passed):

@@ -2,7 +2,7 @@ import arcade
 from weapon import Weapon
 from constants import REQUIRED_SCRAP, BASE_COLOR, BASE_RANGE_COLOR
 
-from common import get_distance
+from common import get_text_object
 
 class Base:
     def __init__(self, x, y, main_base=None, player=None):
@@ -11,7 +11,7 @@ class Base:
         self.center_x = x
         self.center_y = y
         self.color = BASE_COLOR
-        self.weapon = Weapon(owner=self, damage=5, range=100, bullet_speed=7, fire_rate=1)
+        self.weapon = Weapon(owner=self, damage=1, range=100, bullet_speed=5, fire_rate=0.5)
 
         self.scrap = 0
         self.level = 0
@@ -30,6 +30,14 @@ class Base:
         self.link_length = 0
 
         self.upgrades: list[str] = []
+
+
+        # Labels for weapon stats
+        self.weapon_damage_label = get_text_object(f"Damage: {self.weapon.damage}", self.center_x, self.center_y - 20)
+        self.weapon_range_label = get_text_object(f"Range: {self.weapon.range}", self.center_x, self.center_y - 35)
+        self.weapon_fire_rate_label = get_text_object(f"Fire Rate: {self.weapon.fire_rate}", self.center_x, self.center_y - 50)
+        self.weapon_bullet_speed_label = get_text_object(f"Bullet Speed: {self.weapon.bullet_speed}", self.center_x, self.center_y - 65)
+
 
     def update(self, enemies, wells):
         self.update_rotation()
@@ -115,5 +123,21 @@ class Base:
                 anchor_y="center"
             )
 
+        # Draw the weapon's damage, range, bullet speed, and fire rate
+        # Icon - stat
+
+        self.weapon_damage_label.text = f"Damage: {self.weapon.damage:.2f}"
+        self.weapon_damage_label.draw()
+        self.weapon_range_label.text = f"Range: {self.weapon.range}"
+        self.weapon_range_label.draw()
+        self.weapon_fire_rate_label.text = f"Fire Rate: {self.weapon.fire_rate:.2f}"
+        self.weapon_fire_rate_label.draw()
+        self.weapon_bullet_speed_label.text = f"Bullet Speed: {self.weapon.bullet_speed:.2f}"
+        self.weapon_bullet_speed_label.draw()
+
+        # Draw the number of collecting nodes on the right side of the base
+        # self.number_of_collecting_nodes.text = f"Collecting Nodes: {len(self.player.active_collecting_nodes)}"
+        # self.number_of_collecting_nodes.draw()
+        
 
         self.weapon.draw()

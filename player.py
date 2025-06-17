@@ -44,9 +44,9 @@ class Player:
         self._player_speed = 0
 
         # Resource management
-        self.scrap = 0
+        self.scrap = 100
         self._collecting_bases = 0
-        self._active_collecting_nodes = set()
+        self.active_collecting_nodes = set()
         self._able_to_spawn = True
 
         # Node connection and placement logic
@@ -136,7 +136,7 @@ class Player:
         self.distance_from_node > self._minimum_node_distance:
             # Create a new node at the player's position
             closest_node = self.closest_node if self.closest_node else self.main_base
-            new_node = Node(self._current_node_id, self.center_x, self.center_y, closest_node=closest_node, main_base=self.main_base)
+            new_node = Node(self._current_node_id, self.center_x, self.center_y, closest_node=closest_node, main_base=self.main_base, player=self)
             self._current_node_id += 1
 
             nodes.append(new_node)

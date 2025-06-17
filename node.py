@@ -45,6 +45,7 @@ class Node:
         # Check if inside a resource well
         for well in wells:
             if is_entity_inside(entity=well, object=self, radius=well.radius) and well.active:
+                self.player.active_collecting_nodes.add(self)
                 self.is_inside_well = True
                 self.is_collecting = True # Start collecting if inside a well
                 self.assigned_well = well # Assign the well to this node
@@ -61,6 +62,8 @@ class Node:
         # TODO: Refactor this logic to be more efficient
         if self.assigned_well and self.assigned_well.capacity <= 0 and self.is_collecting:
             self.is_collecting = False
+            if self.player:
+                self.player.active_collecting_nodes.discard(self)
 
         if self.assigned_well and self.assigned_well.capacity <= 0 and self.is_inside_well:
             self.main_base.weapon.level_up(*self.assigned_well.upgrade_attributes)
